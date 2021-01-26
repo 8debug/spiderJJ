@@ -10,6 +10,7 @@ import time
 import requests
 from selenium.webdriver import ChromeOptions
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
 
 # Press the green button in the gutter to run the script.
@@ -51,9 +52,9 @@ def excel(result):
         sheet.write(row, 8, jj_item["jj_sr_2"])
         sheet.write(row, 9, jj_item["jj_sr_3"])
         # 晨星网评级3/5/10年
-        # sheet.write(row, 10, jj_item["jj_star_3"])
-        # sheet.write(row, 11, jj_item["jj_star_5"])
-        # sheet.write(row, 12, jj_item["jj_star_10"])
+        sheet.write(row, 10, jj_item["year3"])
+        sheet.write(row, 11, jj_item["year5"])
+        sheet.write(row, 12, jj_item["year10"])
         # 手续费
         sheet.write(row, 13, jj_item["jj_money_sxf"])
         # 购买起点
@@ -63,9 +64,21 @@ def excel(result):
 
 
 def spider_cx_detail(array):
+    '''
+    晨星网基金详情，爬3/5/10年的评级
+    :param array:
+    :return:
+    '''
     for item in array:
         bro.get(item["url"])
-    pass
+        year3_src = bro.find_element_by_xpath('//*[@id="qt_star"]/li[6]/img').get_attribute('src')
+        year5_src = bro.find_element_by_xpath('//*[@id="qt_star"]/li[7]/img').get_attribute('src')
+        year10_src = bro.find_element_by_xpath('//*[@id="qt_star"]/li[8]/img').get_attribute('src')
+        item['year3'] = get_stars_by_image(year3_src)
+        item['year5'] = get_stars_by_image(year5_src)
+        item['year10'] = get_stars_by_image(year10_src)
+    bro.quit()
+    excel(array)
 
 
 def get_stars_by_image(url):
@@ -75,17 +88,17 @@ def get_stars_by_image(url):
     star2_standard = '1729ddcb120dd221d358095b6f3a3762'
     star1_standard = '99f77f88e0ff9319b06c4e754edbd836'
     star0_standard = '0dc4da1ee45b6df501925c8bc2c814ce'
-    image_hash = hashlib.md5(Image.open(io.BytesIO(requests.get(url).content)).tobytes())
+    image_hash = hashlib.md5(Image.open(io.BytesIO(requests.get(url).content)).tobytes()).hexdigest()
 
-    stars = ''
+    stars = '☆☆☆☆☆'
     if image_hash == star1_standard:
-        stars = '★'
+        stars = '★☆☆☆☆'
     elif image_hash == star2_standard:
-        stars = '★★'
+        stars = '★★☆☆☆'
     elif image_hash == star3_standard:
-        stars = '★★★'
+        stars = '★★★☆☆'
     elif image_hash == star4_standard:
-        stars = '★★★★'
+        stars = '★★★★☆'
     elif image_hash == star5_standard:
         stars = '★★★★★'
     return stars
@@ -96,7 +109,7 @@ def spider_cx(array):
     bro.delete_all_cookies()
     cookie = {
         "name": "authWeb",
-        "value": "79CB2650C8825C80B32FCAAE3D16A0558BAAA9E4709DAC073290A337AF24EF2391318BCE0FF37DD3F726C83C2AB3A60ADC9BCDCE1D61146C90B13014409DD811C7ACE6ED60F24D5964A8DAC59097AA564E4C93F9BDE11B244FB4F93842DF9C73AC96A3BCD0F6C492F92DA6FACFF1266BEF7B91FF",
+        "value": "E7EBF11698C41E7618DF5BE0AC01375E85F240C73C8B956366304798031D42F073A1EDC62559C0469EB5B611941433BFB9B1BC60D91F6CE94746F4E7633F04ACC9F57FB617453D96656731DDB2684D0CC68F65921BE5D7ED787C7458CD8AE16CA11827B29F032CCE6B1945F1E6F08D8237C0AA14",
         "domain": "www.morningstar.cn",
         "path": "/",
         "expires/Max-Age": "2021-02-25T07:13:04.424Z",
@@ -114,14 +127,8 @@ def spider_cx(array):
             # 删除头行
             trs.pop(0)
             for item_tr in trs:
-                url_stars_image = item_tr.find_element_by_xpath('.//td[6]/img').get_attribute('src')
-                year3_stars = get_stars_by_image(url_stars_image)
-
-                url_stars_image = item_tr.find_element_by_xpath('.//td[7]/img').get_attribute('src')
-                year5_stars = get_stars_by_image(url_stars_image)
-
-
-        # bro.quit()
+                item["url"] = item_tr.find_element_by_xpath('.//td[3]/a').get_attribute('href')
+    spider_cx_detail(array)
 
 
 def spider_detail(array):
@@ -170,9 +177,14 @@ def spider_detail(array):
 
 
 if __name__ == '__main__':
+    # 实现无可视化界面
+    chrome_option = Options()
+    chrome_option.add_argument('--headless')
+    chrome_option.add_argument('--disable-gpu')
+
     option = ChromeOptions()
     option.add_experimental_option('excludeSwitches', ['enable-automation'])
-    bro = webdriver.Chrome(executable_path='./chromedriver.exe', options=option)
+    bro = webdriver.Chrome(executable_path='./chromedriver.exe', options=option, chrome_options=chrome_option)
     bro.implicitly_wait(10)  # 全局隐式等待10秒
     bro.get('https://www.howbuy.com/fundtool/filter.htm')
     # bro.maximize_window()  # 将浏览器最大化显示
@@ -207,7 +219,7 @@ if __name__ == '__main__':
     elem_table = bro.find_element_by_xpath('/html/body/div[2]/div[3]/div[2]/div[2]/div[2]/div[1]/table')
     elem_trs = elem_table.find_elements_by_tag_name('tr')
     array_jj = []
-    for tr in [elem_trs[0]]:
+    for tr in elem_trs:
         elem_tds = tr.find_elements_by_xpath('.//td')
         # 基金代码
         jjdm = elem_tds[0].find_element_by_xpath('.//input').get_attribute('jjdm')
