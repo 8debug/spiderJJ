@@ -4,6 +4,7 @@
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 # 实现规避检测
+import io
 import time
 
 import requests
@@ -17,6 +18,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 import xlrd
 import xlwt
 from xlutils.copy import copy
+import hashlib
+from PIL import Image
 
 
 def excel(result):
@@ -65,6 +68,29 @@ def spider_cx_detail(array):
     pass
 
 
+def get_stars_by_image(url):
+    star5_standard = 'a8e420353e92219531bbdbf31e31728a'
+    star4_standard = 'de55f4c0ca9463e5b6591a276e523bc9'
+    star3_standard = '9210d3c3cf673c7fbebe317a90e604bb'
+    star2_standard = '1729ddcb120dd221d358095b6f3a3762'
+    star1_standard = '99f77f88e0ff9319b06c4e754edbd836'
+    star0_standard = '0dc4da1ee45b6df501925c8bc2c814ce'
+    image_hash = hashlib.md5(Image.open(io.BytesIO(requests.get(url).content)).tobytes())
+
+    stars = ''
+    if image_hash == star1_standard:
+        stars = '★'
+    elif image_hash == star2_standard:
+        stars = '★★'
+    elif image_hash == star3_standard:
+        stars = '★★★'
+    elif image_hash == star4_standard:
+        stars = '★★★★'
+    elif image_hash == star5_standard:
+        stars = '★★★★★'
+    return stars
+
+
 def spider_cx(array):
     bro.get('https://www.morningstar.cn/quickrank/default.aspx')
     bro.delete_all_cookies()
@@ -88,16 +114,13 @@ def spider_cx(array):
             # 删除头行
             trs.pop(0)
             for item_tr in trs:
-                star3_url = item_tr.find_element_by_xpath('.//td[6]/img').get_attribute('src')
-                star3_rep = requests.head(star3_url)
-                star3_size = star3_rep.headers['Content-Length']
+                url_stars_image = item_tr.find_element_by_xpath('.//td[6]/img').get_attribute('src')
+                year3_stars = get_stars_by_image(url_stars_image)
 
-                star5_url = item_tr.find_element_by_xpath('.//td[7]/img').get_attribute('src')
-                star5_rep = requests.head(star5_url)
-                star5_size = star5_rep.headers['Content-Length']
+                url_stars_image = item_tr.find_element_by_xpath('.//td[7]/img').get_attribute('src')
+                year5_stars = get_stars_by_image(url_stars_image)
 
-                print("三年评级 文件大小{} 网址 {}".format(star3_size, star3_url))
-                print("五年评级 文件大小{} 网址 {}".format(star5_size, star5_url))
+
         # bro.quit()
 
 
@@ -184,7 +207,7 @@ if __name__ == '__main__':
     elem_table = bro.find_element_by_xpath('/html/body/div[2]/div[3]/div[2]/div[2]/div[2]/div[1]/table')
     elem_trs = elem_table.find_elements_by_tag_name('tr')
     array_jj = []
-    for tr in [ elem_trs[0] ]:
+    for tr in [elem_trs[0]]:
         elem_tds = tr.find_elements_by_xpath('.//td')
         # 基金代码
         jjdm = elem_tds[0].find_element_by_xpath('.//input').get_attribute('jjdm')
