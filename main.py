@@ -5,6 +5,8 @@
 
 # 实现规避检测
 import time
+
+import requests
 from selenium.webdriver import ChromeOptions
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
@@ -57,30 +59,46 @@ def excel(result):
     wb.save('基金筛选结果.xls')
 
 
+def spider_cx_detail(array):
+    for item in array:
+        bro.get(item["url"])
+    pass
+
+
 def spider_cx(array):
     bro.get('https://www.morningstar.cn/quickrank/default.aspx')
     bro.delete_all_cookies()
     cookie = {
         "name": "authWeb",
-        "value": "1CCF8E6EC98E66DE98E5D080502681FA859D3053E57921AB2AF9C5B9A079656E12721F811B3971989C8186A45F729C712362FA6380338A1A17935CC4F360EEAEA3715442ECF30AD35FBECE94E51EF23CDE99A47B8E0E5C37C4D210177A5006A152A19C05F25BBB13201073C0B6FABBAA36E6B922",
+        "value": "79CB2650C8825C80B32FCAAE3D16A0558BAAA9E4709DAC073290A337AF24EF2391318BCE0FF37DD3F726C83C2AB3A60ADC9BCDCE1D61146C90B13014409DD811C7ACE6ED60F24D5964A8DAC59097AA564E4C93F9BDE11B244FB4F93842DF9C73AC96A3BCD0F6C492F92DA6FACFF1266BEF7B91FF",
         "domain": "www.morningstar.cn",
         "path": "/",
         "expires/Max-Age": "2021-02-25T07:13:04.424Z",
     }
     bro.add_cookie(cookie)
     bro.refresh()
-    elem_input = bro.find_element_by_xpath('//*[@id="ctl00_cphMain_txtFund"]')
     for item in array:
+        elem_input = bro.find_element_by_xpath('//*[@id="ctl00_cphMain_txtFund"]')
         ActionChains(bro).move_to_element(elem_input).click().perform()
         elem_input.clear()
         elem_input.send_keys(item["jjdm"])
         bro.find_element_by_xpath('//*[@id="ctl00_cphMain_btnGo"]').click()
-        trs = bro.find_elements_by_xpath('//*[@id="ctl00_cphMain_gridResult"]/tbody/tr')
+        trs = bro.find_elements_by_xpath('//table[@id="ctl00_cphMain_gridResult"]//tr')
         if len(trs) > 1:
-            trs = trs.pop(0)
+            # 删除头行
+            trs.pop(0)
             for item_tr in trs:
-                url_cx = item_tr.find_element_by_xpath('.//td[1]/a').get_attribute('href')
-                item["url_cx"] = url_cx
+                star3_url = item_tr.find_element_by_xpath('.//td[6]/img').get_attribute('src')
+                star3_rep = requests.head(star3_url)
+                star3_size = star3_rep.headers['Content-Length']
+
+                star5_url = item_tr.find_element_by_xpath('.//td[7]/img').get_attribute('src')
+                star5_rep = requests.head(star5_url)
+                star5_size = star5_rep.headers['Content-Length']
+
+                print("三年评级 文件大小{} 网址 {}".format(star3_size, star3_url))
+                print("五年评级 文件大小{} 网址 {}".format(star5_size, star5_url))
+        # bro.quit()
 
 
 def spider_detail(array):
@@ -90,7 +108,7 @@ def spider_detail(array):
     :return:
     """
     for jj_item in array:
-        bro.get(jj_item['url_detail'])
+        bro.get(jj_item['url'])
         time.sleep(2)
         # 基金规模
         jj_money = bro.find_element_by_xpath('/html/body/div[2]/div[3]/div/div[2]/div/div[2]/div[2]/ul/li[3]/span').text
@@ -123,8 +141,8 @@ def spider_detail(array):
         jj_item["jj_sr_1"] = jj_sr_1
         jj_item["jj_sr_2"] = jj_sr_2
         jj_item["jj_sr_3"] = jj_sr_3
+    spider_cx(array)
     excel(array)
-    bro.quit()
     return array
 
 
@@ -166,7 +184,7 @@ if __name__ == '__main__':
     elem_table = bro.find_element_by_xpath('/html/body/div[2]/div[3]/div[2]/div[2]/div[2]/div[1]/table')
     elem_trs = elem_table.find_elements_by_tag_name('tr')
     array_jj = []
-    for tr in elem_trs:
+    for tr in [ elem_trs[0] ]:
         elem_tds = tr.find_elements_by_xpath('.//td')
         # 基金代码
         jjdm = elem_tds[0].find_element_by_xpath('.//input').get_attribute('jjdm')
@@ -190,7 +208,7 @@ if __name__ == '__main__':
         jj = {
             'jjdm': jjdm,
             'jjjc': jjjc,
-            'url_detail': url,
+            'url': url,
             'jj_money_sxf': jj_money_sxf,
             "jj_money_start": jj_money_start
         }
