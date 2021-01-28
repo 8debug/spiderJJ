@@ -81,6 +81,8 @@ class SpiderHaoMai:
         # 每页显示100条
         self.browser.find_element_by_xpath(
             '/html/body/div[2]/div[3]/div[2]/div[2]/div[2]/div[2]/div[1]/span[1]/a[3]').click()
+        # 若不加此代码，紧接着调用get_data_list会报错，提示无法在当前页面找到元素；
+        # 我曾试着使用 显式等待 处理，但是没有解决，应该是自己没用对
         time.sleep(2)
         return self
 
