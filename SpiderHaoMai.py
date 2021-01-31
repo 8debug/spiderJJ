@@ -1,7 +1,11 @@
+import hashlib
+import io
 import time
 from copy import copy
 
+import requests
 import xlrd
+from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
@@ -16,8 +20,8 @@ class SpiderHaoMai:
         """
         # 实现无可视化界面
         options = Options()
-        options.add_argument('--headless')
-        options.add_argument('--disable-gpu')
+        # options.add_argument('--headless')
+        # options.add_argument('--disable-gpu')
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
 
         self.browser = webdriver.Chrome(executable_path='./chromedriver.exe', options=options)
@@ -65,16 +69,17 @@ class SpiderHaoMai:
         elem_hover.find_element_by_xpath('.//li[@desc="yjpm6_业绩排名_1_近3年(前1/4)_0"]').click()
         return self
 
-    def action_by_cyb(self):
+    def action_by_keyword(self, keyword):
         """
-        过滤出 创业板 基金
+        过滤出 基金
         :return:
         """
         elem_input = self.browser.find_element_by_xpath('//*[@id="fund_keywords"]')
         ActionChains(self.browser).move_to_element(elem_input).click().perform()
         elem_input.clear()
-        elem_input.send_keys('创业板')
+        elem_input.send_keys(keyword)
         self.browser.find_element_by_xpath('//*[@id="keywords_btn"]').click()
+        self.browser.find_element_by_xpath('//*[@id="buy_fund_intent"]').click()
         return self
 
     def action_by_100(self):
@@ -118,58 +123,54 @@ class SpiderHaoMai:
                 "money_sxf": money_sxf,
                 "money_point": money_point,
             }
-            data_detail = self.get_data_detail(url)
-            data.update(data_detail)
             array_result.append(data)
         return array_result
 
-    def get_data_detail(self, url):
+    def get_data_detail(self, array):
         """
         基金详情，爬取 规模 | 成立时间 | 基金经理名 | 基金经理介绍地址 | 经理从业时长 | 经理最大回撤 | 夏普率1/2/3年
-        :param url:
+        :param array:
         :return:
         """
-        old_tab = self.browser.window_handles[0]
-        self.browser.execute_script("window.open('');")
-        new_tab = self.browser.window_handles[1]
-        self.browser.switch_to.window(new_tab)
-        self.browser.get(url)
-        money = self.browser.find_element_by_xpath(
-            '/html/body/div[2]/div[3]/div/div[2]/div/div[2]/div[2]/ul/li[3]/span').text
-        money = money.replace('亿', '')
-        create_date = self.browser.find_element_by_xpath(
-            '/html/body/div[2]/div[3]/div/div[2]/div/div[2]/div[2]/ul/li[4]/span').text
-        elem_workname = self.browser.find_element_by_xpath('//*[@id="nTab3_0"]/div[1]/div/div[2]/div/ul[1]/li[1]/a')
-        work_name = elem_workname.text
-        work_url = elem_workname.get_attribute('href')
-        work_time = self.browser.find_element_by_xpath('//*[@id="nTab3_0"]/div[1]/div/div[2]/div/ul[1]/li[5]/span').text
-        work_time = work_time.replace('从业时间：', '')
-        work_max_revoke = self.browser.find_element_by_xpath(
-            '//*[@id="nTab3_0"]/div[1]/div/div[2]/ul/li[3]/p[2]/span').text
-        sr1 = self.browser.find_element_by_xpath(
-            '//*[@id="nTab2_0"]/div[5]/div[2]/div[2]/div/div[3]/table/tbody/tr[3]/td[2]').text
-        sr2 = self.browser.find_element_by_xpath(
-            '//*[@id="nTab2_0"]/div[5]/div[2]/div[2]/div/div[3]/table/tbody/tr[3]/td[3]').text
-        sr3 = self.browser.find_element_by_xpath(
-            '//*[@id="nTab2_0"]/div[5]/div[2]/div[2]/div/div[3]/table/tbody/tr[3]/td[4]').text
-        self.browser.close()
-        self.browser.switch_to.window(old_tab)
+        for item in array:
+            url = item["url"]
+            self.browser.get(url)
+            money = self.browser.find_element_by_xpath(
+                '/html/body/div[2]/div[3]/div/div[2]/div/div[2]/div[2]/ul/li[3]/span').text
+            money = money.replace('亿', '')
+            create_date = self.browser.find_element_by_xpath(
+                '/html/body/div[2]/div[3]/div/div[2]/div/div[2]/div[2]/ul/li[4]/span').text
+            elem_workname = self.browser.find_element_by_xpath('//*[@id="nTab3_0"]/div[1]/div/div[2]/div/ul[1]/li[1]/a')
+            work_name = elem_workname.text
+            work_url = elem_workname.get_attribute('href')
+            work_time = self.browser.find_element_by_xpath('//*[@id="nTab3_0"]/div[1]/div/div[2]/div/ul[1]/li[5]/span').text
+            work_time = work_time.replace('从业时间：', '')
+            work_max_revoke = self.browser.find_element_by_xpath(
+                '//*[@id="nTab3_0"]/div[1]/div/div[2]/ul/li[3]/p[2]/span').text
+            sr1 = self.browser.find_element_by_xpath(
+                '//*[@id="nTab2_0"]/div[5]/div[2]/div[2]/div/div[3]/table/tbody/tr[3]/td[2]').text
+            sr2 = self.browser.find_element_by_xpath(
+                '//*[@id="nTab2_0"]/div[5]/div[2]/div[2]/div/div[3]/table/tbody/tr[3]/td[3]').text
+            sr3 = self.browser.find_element_by_xpath(
+                '//*[@id="nTab2_0"]/div[5]/div[2]/div[2]/div/div[3]/table/tbody/tr[3]/td[4]').text
 
-        return {
-            'money': money,
-            'create_date': create_date,
-            'work_name': work_name,
-            'work_url': work_url,
-            'work_time': work_time,
-            'work_max_revoke': work_max_revoke,
-            'sr1': sr1,
-            'sr2': sr2,
-            'sr3': sr3
-        }
+            sub_info = {
+                'money': money,
+                'create_date': create_date,
+                'work_name': work_name,
+                'work_url': work_url,
+                'work_time': work_time,
+                'work_max_revoke': work_max_revoke,
+                'sr1': sr1,
+                'sr2': sr2,
+                'sr3': sr3
+            }
+            item.update(sub_info)
 
-    def excel(self, result):
+    def excel(self, name, result):
         """
         根据模版生成excel
+        :param name: 文档名
         :param result:
         :return:
         """
@@ -201,17 +202,90 @@ class SpiderHaoMai:
             sheet.write(row, 8, jj_item["sr2"])
             sheet.write(row, 9, jj_item["sr3"])
             # 晨星网评级3/5/10年
-            # sheet.write(row, 10, jj_item["year3"])
-            # sheet.write(row, 11, jj_item["year5"])
-            # sheet.write(row, 12, jj_item["year10"])
+            sheet.write(row, 10, jj_item["year3"])
+            sheet.write(row, 11, jj_item["year5"])
+            sheet.write(row, 12, jj_item["year10"])
             # 手续费
             sheet.write(row, 13, jj_item["money_sxf"])
             # 购买起点
             sheet.write(row, 14, jj_item["money_point"])
         # 保存
-        wb.save('基金筛选结果.xls')
+        wb.save(name+'.xls')
+
+    def _stars_(self, url):
+        star5_standard = 'a8e420353e92219531bbdbf31e31728a'
+        star4_standard = 'de55f4c0ca9463e5b6591a276e523bc9'
+        star3_standard = '9210d3c3cf673c7fbebe317a90e604bb'
+        star2_standard = '1729ddcb120dd221d358095b6f3a3762'
+        star1_standard = '99f77f88e0ff9319b06c4e754edbd836'
+        star0_standard = '0dc4da1ee45b6df501925c8bc2c814ce'
+        image_hash = hashlib.md5(Image.open(io.BytesIO(requests.get(url).content)).tobytes()).hexdigest()
+
+        stars = '☆☆☆☆☆'
+        if image_hash == star1_standard:
+            stars = '★☆☆☆☆'
+        elif image_hash == star2_standard:
+            stars = '★★☆☆☆'
+        elif image_hash == star3_standard:
+            stars = '★★★☆☆'
+        elif image_hash == star4_standard:
+            stars = '★★★★☆'
+        elif image_hash == star5_standard:
+            stars = '★★★★★'
+        return stars
+
+    def get_list_from_cx(self, array):
+        """
+        晨星网 搜索基金
+        :param array:
+        :return:
+        """
+        url_cx = 'https://www.morningstar.cn/quickrank/default.aspx'
+        self.browser.get(url_cx)
+        self.browser.delete_all_cookies()
+        cookie = {
+            "name": "authWeb",
+            "value": "4DD3D963FA0AC1BC4E436A80A9CEBA23E22BB27F02F675786276327B9614CA13A77781DD0E810B1B0D5470F74E81FD45C4A3B9DBABC99D351E34DADDB275DAE4CCD3E24D00F6BFF49DEA687F1F678249A588B5DFB1BCFBD7635AEC3AE787AF68A76DB5B37D32EC2F43CE50FEF50F5DAEC1CECEC3",
+            "domain": "www.morningstar.cn",
+            "path": "/",
+            "expires/Max-Age": "2021-02-25T07:13:04.424Z",
+        }
+        self.browser.add_cookie(cookie)
+        for item in array:
+            self.browser.get(url_cx)
+            elem_input = self.browser.find_element_by_xpath('//*[@id="ctl00_cphMain_txtFund"]')
+            ActionChains(self.browser).move_to_element(elem_input).click().perform()
+            elem_input.clear()
+            elem_input.send_keys(item["jjdm"])
+            self.browser.find_element_by_xpath('//*[@id="ctl00_cphMain_btnGo"]').click()
+            trs = self.browser.find_elements_by_xpath('//table[@id="ctl00_cphMain_gridResult"]//tr')
+            if len(trs) > 1:
+                # 删除头行
+                trs.pop(0)
+                url_detail = trs[0].find_element_by_xpath('.//td[3]/a').get_attribute('href')
+                item["url"] = url_detail
+
+    def get_detail_from_cx(self, array):
+        """
+        晨星网 基金详情，获取3/5/10年评级
+        :param array:
+        :return:
+        """
+        for item in array:
+            self.browser.get(item['url'])
+            year3_src = self.browser.find_element_by_xpath('//*[@id="qt_star"]/li[6]/img').get_attribute('src')
+            year5_src = self.browser.find_element_by_xpath('//*[@id="qt_star"]/li[7]/img').get_attribute('src')
+            year10_src = self.browser.find_element_by_xpath('//*[@id="qt_star"]/li[8]/img').get_attribute('src')
+            item['year3'] = self._stars_(year3_src)
+            item['year5'] = self._stars_(year5_src)
+            item['year10'] = self._stars_(year10_src)
 
 
+keyword = '沪深300'
 spider = SpiderHaoMai()
-result = spider.action_open().action_by_zs().action_by_4433().action_by_cyb().action_by_100().get_data_list()
-spider.excel(result)
+result = spider.action_open().action_by_zs().action_by_4433().action_by_keyword(keyword).action_by_100().get_data_list()
+# result = [result[0]]
+spider.get_data_detail(result)
+spider.get_list_from_cx(result)
+spider.get_detail_from_cx(result)
+spider.excel(keyword, result)
