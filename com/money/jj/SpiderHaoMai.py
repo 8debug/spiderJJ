@@ -24,7 +24,7 @@ class SpiderHaoMai:
         # options.add_argument('--disable-gpu')
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
 
-        self.browser = webdriver.Chrome(executable_path='./chromedriver.exe', options=options)
+        self.browser = webdriver.Chrome(executable_path='../../../chromedriver.exe', options=options)
         self.browser.implicitly_wait(20)  # 全局隐式等待10秒
         # self.browser.maximize_window()
 
@@ -175,7 +175,7 @@ class SpiderHaoMai:
         :return:
         """
         # 打开excel文件
-        rb = xlrd.open_workbook('筛选基金条件.xls', formatting_info=True)
+        rb = xlrd.open_workbook('../../../筛选基金条件.xls', formatting_info=True)
         # 获得要操作的页
         # r_sheet = rb.sheet_by_index(0)
         wb = copy(rb)
@@ -245,7 +245,7 @@ class SpiderHaoMai:
         self.browser.delete_all_cookies()
         cookie = {
             "name": "authWeb",
-            "value": "4DD3D963FA0AC1BC4E436A80A9CEBA23E22BB27F02F675786276327B9614CA13A77781DD0E810B1B0D5470F74E81FD45C4A3B9DBABC99D351E34DADDB275DAE4CCD3E24D00F6BFF49DEA687F1F678249A588B5DFB1BCFBD7635AEC3AE787AF68A76DB5B37D32EC2F43CE50FEF50F5DAEC1CECEC3",
+            "value": "94A0F2FF90A06B69649EC9142EEC5B28E04E43AF7A282F212D71844684A7ABE04B11570679260B44363BA31B18D036383C319F953FCC0E7B5AFDE0E44141CB4A839E028067EB440113A6C698BFCF546753CA9C444CC9A966D749FF208F5B33E1E6182A333D912C05B81CBFB4D53C1D86C44AF554",
             "domain": "www.morningstar.cn",
             "path": "/",
             "expires/Max-Age": "2021-02-25T07:13:04.424Z",
@@ -281,7 +281,7 @@ class SpiderHaoMai:
             item['year10'] = self._stars_(year10_src)
 
 
-keyword = '沪深300'
+keyword = '中证500'
 spider = SpiderHaoMai()
 result = spider.action_open().action_by_zs().action_by_4433().action_by_keyword(keyword).action_by_100().get_data_list()
 # result = [result[0]]
