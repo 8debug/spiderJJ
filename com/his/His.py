@@ -22,7 +22,7 @@ class His:
         options.add_argument('--headless')
         options.add_argument('--disable-gpu')
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
-        self.browser = webdriver.Chrome(executable_path='D:\project\pythonspace\spiderEventhing\chromedriver.exe',
+        self.browser = webdriver.Chrome(executable_path='E:\Project\pythonspace\spiderJJ\chromedriver.exe',
                                         options=options)
         self.browser.maximize_window()
         # self.browser.implicitly_wait(3)  # 全局隐式等待10秒
@@ -34,12 +34,13 @@ class His:
 
     def test(self):
         for i in range(10):
-            self.result.append(["这是什么"+str(i)])
+            self.result.append(["这是什么" + str(i)])
         self.excel_colse()
         self.browser.quit()
 
     def open(self):
         try:
+
             url = 'http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2020/index.html'
             self.browser.get(url)
             # 选择 投资目的
@@ -53,6 +54,9 @@ class His:
                 # level = code+"-"+name
                 if name.find("辽宁省") > -1:
                     self.level_2(name, href)
+        except Exception as e:
+            print("当前url%s", self.browser.current_url)
+            print("出现如下异常%s" % e)
         finally:
             self.excel_colse()
             self.browser.quit()
