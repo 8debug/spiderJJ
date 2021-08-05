@@ -27,11 +27,6 @@ class His:
                                         options=options)
         self.browser.maximize_window()
         # self.browser.implicitly_wait(3)  # 全局隐式等待10秒
-        global wb
-        wb = Workbook()
-
-        global ws
-        ws = wb.active
 
     def test(self):
         for i in range(10):
@@ -40,19 +35,26 @@ class His:
         self.browser.quit()
 
     def open(self):
+        global wb
+        wb = Workbook()
+
         try:
             url = 'http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2020/index.html'
             self.browser.get(url)
             # 选择 投资目的
             self.util("//tr[@class='provincetr']//a[text()='北京市']")
             rows = self.browser.find_elements_by_xpath("//tr[@class='provincetr']//a")
-            for a in rows:
+            for index in range(rows):
+                a = rows[index]
                 href = a.get_property('href')
                 name = a.text
                 # code = str.replace(href, ".html", "")
                 # code = str.replace(code, "http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2020/", '')
                 # level = code+"-"+name
+                global ws
+                ws = wb.create_sheet(name, index)
                 self.level_2(name, href)
+                self.excel_append_result()
         except Exception as e:
             print("出现如下异常, 当前url%s", self.browser.current_url)
         finally:
@@ -115,6 +117,11 @@ class His:
         all_handles = self.browser.window_handles  # 获取全部页面句柄
         self.browser.switch_to.window(all_handles.pop())  # 打开 最新弹出的页面
         self.browser.get(url)
+
+    def excel_append_result(self):
+        for i in range(len(self.result)):
+            ws.append(self.result[i])
+        self.result.clear()
 
     def excel_append(self, content):
         self.result.append([content])
