@@ -10,21 +10,20 @@ from selenium.webdriver.support import expected_conditions as EC
 global wb
 global ws
 
-pro_dir = 'E:/Project/pythonspace/spiderJJ'
-
 
 class His:
     def __init__(self):
         """
         初始化 配置
         """
+        self.pro_dir = 'E:/Project/pythonspace/spiderJJ'
         # 实现无可视化界面
         self.result = []
         options = Options()
         options.add_argument('--headless')
         options.add_argument('--disable-gpu')
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
-        self.browser = webdriver.Chrome(executable_path=pro_dir+'/chromedriver.exe',
+        self.browser = webdriver.Chrome(executable_path=self.pro_dir + '/chromedriver.exe',
                                         options=options)
         self.browser.maximize_window()
         # self.browser.implicitly_wait(3)  # 全局隐式等待10秒
@@ -42,7 +41,6 @@ class His:
 
     def open(self):
         try:
-
             url = 'http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2020/index.html'
             self.browser.get(url)
             # 选择 投资目的
@@ -54,11 +52,9 @@ class His:
                 # code = str.replace(href, ".html", "")
                 # code = str.replace(code, "http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2020/", '')
                 # level = code+"-"+name
-                if name.find("辽宁省") > -1:
-                    self.level_2(name, href)
+                self.level_2(name, href)
         except Exception as e:
-            print("当前url%s", self.browser.current_url)
-            print("出现如下异常%s" % e)
+            print("出现如下异常, 当前url%s", self.browser.current_url)
         finally:
             self.excel_colse()
             self.browser.quit()
@@ -93,7 +89,6 @@ class His:
         self._close_switch()
 
     def util(self, xpath):
-        print("util===", xpath, self.browser.current_url)
         WebDriverWait(self.browser, 10).until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
         return self
 
@@ -129,7 +124,7 @@ class His:
     def excel_colse(self):
         for i in range(len(self.result)):
             ws.append(self.result[i])
-            wb.save(pro_dir+'/2020年统计用区划代码和城乡划分代码.xlsx')
+            wb.save(self.pro_dir + '/2020年统计用区划代码和城乡划分代码.xlsx')
 
 
 his = His()
