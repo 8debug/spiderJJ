@@ -10,6 +10,8 @@ from selenium.webdriver.support import expected_conditions as EC
 global wb
 global ws
 
+pro_dir = 'E:/Project/pythonspace/spiderJJ'
+
 
 class His:
     def __init__(self):
@@ -22,7 +24,7 @@ class His:
         options.add_argument('--headless')
         options.add_argument('--disable-gpu')
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
-        self.browser = webdriver.Chrome(executable_path='E:\Project\pythonspace\spiderJJ\chromedriver.exe',
+        self.browser = webdriver.Chrome(executable_path=pro_dir+'/chromedriver.exe',
                                         options=options)
         self.browser.maximize_window()
         # self.browser.implicitly_wait(3)  # 全局隐式等待10秒
@@ -127,7 +129,7 @@ class His:
     def excel_colse(self):
         for i in range(len(self.result)):
             ws.append(self.result[i])
-            wb.save('D:/project/pythonspace/spiderEventhing/2020年统计用区划代码和城乡划分代码.xlsx')
+            wb.save(pro_dir+'/2020年统计用区划代码和城乡划分代码.xlsx')
 
 
 his = His()
