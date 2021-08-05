@@ -5,7 +5,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
-from xlutils.copy import copy
 from selenium.webdriver.support import expected_conditions as EC
 
 global wb
@@ -18,6 +17,7 @@ class His:
         初始化 配置
         """
         # 实现无可视化界面
+        self.result = []
         options = Options()
         options.add_argument('--headless')
         options.add_argument('--disable-gpu')
@@ -32,6 +32,12 @@ class His:
         global ws
         ws = wb.active
 
+    def test(self):
+        for i in range(10):
+            self.result.append(["这是什么"+str(i)])
+        self.excel_colse()
+        self.browser.quit()
+
     def open(self):
         try:
             url = 'http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2020/index.html'
@@ -45,7 +51,8 @@ class His:
                 # code = str.replace(href, ".html", "")
                 # code = str.replace(code, "http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2020/", '')
                 # level = code+"-"+name
-                self.level_2(name, href)
+                if name.find("辽宁省") > -1:
+                    self.level_2(name, href)
         finally:
             self.excel_colse()
             self.browser.quit()
@@ -67,20 +74,20 @@ class His:
                 code = a_first.text
                 href = a_first.get_property('href')
                 name = td_last.text
-                level = "-".join([content, code + "-" + name])
+                level = ",".join([content, code, name])
                 print(level)
                 self.excel_append(level)
                 self.level_2(level, href)
             else:
                 code = td_first.text
                 name = td_last.text
-                level = ",".join([content, code + "-" + name])
+                level = ",".join([content, code, name])
                 print(level)
                 self.excel_append(level)
         self._close_switch()
 
     def util(self, xpath):
-        # print("util===", xpath)
+        print("util===", xpath, self.browser.current_url)
         WebDriverWait(self.browser, 10).until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
         return self
 
@@ -109,11 +116,14 @@ class His:
         self.browser.get(url)
 
     def excel_append(self, content):
+        self.result.append([content])
         # 可以使用append插入一行数据
-        ws.append([content])
+        # ws.append([content])
 
     def excel_colse(self):
-        wb.save('D:/project/pythonspace/spiderEventhing/2020年统计用区划代码和城乡划分代码.xlsx')
+        for i in range(len(self.result)):
+            ws.append(self.result[i])
+            wb.save('D:/project/pythonspace/spiderEventhing/2020年统计用区划代码和城乡划分代码.xlsx')
 
 
 his = His()
