@@ -1,4 +1,5 @@
 from copy import copy
+from time import sleep
 
 from openpyxl import Workbook
 from selenium import webdriver
@@ -11,6 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 global wb
 global ws
+global file_name
 
 
 class His:
@@ -54,7 +56,17 @@ class His:
                 # level = code+"-"+name
                 global ws
                 ws = wb.create_sheet(name, index)
-                if name.find('上海市') == -1 and name.find('北京市') == -1 and name.find('天津市') == -1:
+                if name.find('上海市') == -1 and \
+                        name.find('北京市') == -1 and \
+                        name.find('天津市') == -1 and \
+                        name.find('河北省') == -1 and \
+                        name.find('山西') == -1 and \
+                        name.find('内蒙古自治区') == -1 and \
+                        name.find('辽宁省') == -1 and \
+                        name.find('黑龙江') == -1 and \
+                        name.find('吉林省') == -1:
+                    global file_name
+                    file_name = name
                     self.level_2(None, a)
                     self.excel_append_result()
         except Exception as e:
@@ -67,7 +79,7 @@ class His:
 
     def level_2(self, content, element):
         self._open_switch(element)
-        self.util("//a[text()='京ICP备05034670号']")
+        self.util("//*[text()='统计用区划代码']")
         # 获取指定节点的父节点的所有向下兄弟节点的子节点a元素
         xpath_tr = "//td[text()='统计用区划代码']/parent::tr/following-sibling::*"
         array_tr = self.browser.find_elements_by_xpath(xpath_tr)
@@ -128,7 +140,6 @@ class His:
         all_handles = self.browser.window_handles  # 获取全部页面句柄
         self.browser.switch_to.window(all_handles.pop())  # 打开 最新弹出的页面
 
-
     def excel_append_result(self):
         for i in range(len(self.result)):
             ws.append(self.result[i])
@@ -142,7 +153,7 @@ class His:
     def excel_colse(self):
         for i in range(len(self.result)):
             ws.append(self.result[i])
-        wb.save(self.pro_dir + '/2020年统计用区划代码和城乡划分代码.xlsx')
+        wb.save(self.pro_dir + '/'+file_name+'.xlsx')
 
 
 his = His()
