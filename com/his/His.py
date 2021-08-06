@@ -10,16 +10,15 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-global wb
-global ws
-global file_name
-
 
 class His:
-    def __init__(self):
+    def __init__(self, driver_name):
         """
         初始化 配置
         """
+        self.wb = Workbook()
+        self.ws = None
+        self.file_name = None
         self.pro_dir = 'D:/project/pythonspace/spiderEventhing/'
         # 实现无可视化界面
         self.result = []
@@ -27,7 +26,7 @@ class His:
         options.add_argument('--headless')
         options.add_argument('--disable-gpu')
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
-        self.browser = webdriver.Chrome(executable_path=self.pro_dir + '/chromedriver.exe',
+        self.browser = webdriver.Chrome(executable_path=self.pro_dir + '/' + driver_name,
                                         options=options)
         self.browser.maximize_window()
         # self.browser.implicitly_wait(3)  # 全局隐式等待10秒
@@ -38,10 +37,7 @@ class His:
         self.excel_colse()
         self.browser.quit()
 
-    def open(self):
-        global wb
-        wb = Workbook()
-
+    def open(self, *args):
         try:
             url = 'http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2020/index.html'
             self.browser.get(url)
@@ -54,21 +50,26 @@ class His:
                 # code = str.replace(href, ".html", "")
                 # code = str.replace(code, "http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2020/", '')
                 # level = code+"-"+name
-                global ws
-                ws = wb.create_sheet(name, index)
-                if name.find('上海市') == -1 and \
-                        name.find('北京市') == -1 and \
-                        name.find('天津市') == -1 and \
-                        name.find('河北省') == -1 and \
-                        name.find('山西') == -1 and \
-                        name.find('内蒙古自治区') == -1 and \
-                        name.find('辽宁省') == -1 and \
-                        name.find('黑龙江') == -1 and \
-                        name.find('吉林省') == -1:
-                    global file_name
-                    file_name = name
-                    self.level_2(None, a)
-                    self.excel_append_result()
+                for city in args:
+                    if name.find(city) > -1:
+                        self.ws = self.wb.create_sheet(name, index)
+                        self.file_name = name
+                        self.level_2(None, a)
+                        self.excel_append_result()
+
+                # if name.find('上海市') == -1 and \
+                #         name.find('北京市') == -1 and \
+                #         name.find('天津市') == -1 and \
+                #         name.find('河北省') == -1 and \
+                #         name.find('山西') == -1 and \
+                #         name.find('内蒙古自治区') == -1 and \
+                #         name.find('辽宁省') == -1 and \
+                #         name.find('黑龙江') == -1 and \
+                #         name.find('吉林省') == -1:
+                #     global file_name
+                #     file_name = name
+                #     self.level_2(None, a)
+                #     self.excel_append_result()
         except Exception as e:
             print("出现如下异常, 当前url%s", self.browser.current_url)
             print(e)
@@ -142,7 +143,7 @@ class His:
 
     def excel_append_result(self):
         for i in range(len(self.result)):
-            ws.append(self.result[i])
+            self.ws.append(self.result[i])
         self.result.clear()
 
     def excel_append(self, content):
@@ -152,9 +153,18 @@ class His:
 
     def excel_colse(self):
         for i in range(len(self.result)):
-            ws.append(self.result[i])
-        wb.save(self.pro_dir + '/'+file_name+'.xlsx')
+            self.ws.append(self.result[i])
+        self.wb.save(self.pro_dir + '/' + self.file_name + '.xlsx')
 
 
-his = His()
-his.open()
+his1 = His('chromedriver.exe')
+his1.open(['新疆维吾尔自治区', '宁夏回族自治区', '青海省'])
+
+his2 = His('chromedriver2.exe')
+his2.open(['甘肃省', '陕西省', '西藏自治区'])
+
+his3 = His('chromedriver3.exe')
+his3.open(['四川省', '贵州省', '云南省'])
+
+his4 = His('chromedriver4.exe')
+his4.open(['广西壮族自治区', '海南省', '重庆市'])
