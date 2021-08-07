@@ -1,8 +1,11 @@
+import threading
 from copy import copy
+from multiprocessing import Pool
 from time import sleep
 
 from openpyxl import Workbook
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -19,7 +22,7 @@ class His:
         self.wb = Workbook()
         self.ws = None
         self.file_name = None
-        self.pro_dir = 'D:/project/pythonspace/spiderEventhing/'
+        self.pro_dir = 'E:/Project/pythonspace/spiderJJ'
         # 实现无可视化界面
         self.result = []
         options = Options()
@@ -37,7 +40,7 @@ class His:
         self.excel_colse()
         self.browser.quit()
 
-    def open(self, *args):
+    def open(self, list_city):
         try:
             url = 'http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2020/index.html'
             self.browser.get(url)
@@ -45,31 +48,13 @@ class His:
             rows = self.browser.find_elements_by_xpath("//tr[@class='provincetr']//a")
             for index in range(len(rows)):
                 a = rows[index]
-                href = a.get_property('href')
                 name = a.text
-                # code = str.replace(href, ".html", "")
-                # code = str.replace(code, "http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2020/", '')
-                # level = code+"-"+name
-                for city in args:
+                for city in list_city:
                     if name.find(city) > -1:
                         self.ws = self.wb.create_sheet(name, index)
                         self.file_name = name
                         self.level_2(None, a)
                         self.excel_append_result()
-
-                # if name.find('上海市') == -1 and \
-                #         name.find('北京市') == -1 and \
-                #         name.find('天津市') == -1 and \
-                #         name.find('河北省') == -1 and \
-                #         name.find('山西') == -1 and \
-                #         name.find('内蒙古自治区') == -1 and \
-                #         name.find('辽宁省') == -1 and \
-                #         name.find('黑龙江') == -1 and \
-                #         name.find('吉林省') == -1:
-                #     global file_name
-                #     file_name = name
-                #     self.level_2(None, a)
-                #     self.excel_append_result()
         except Exception as e:
             print("出现如下异常, 当前url%s", self.browser.current_url)
             print(e)
@@ -108,7 +93,11 @@ class His:
         self._close_switch()
 
     def util(self, xpath):
-        WebDriverWait(self.browser, 10).until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
+        try:
+            WebDriverWait(self.browser, 10).until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
+        except TimeoutException as e:
+            self.browser.refresh()
+            WebDriverWait(self.browser, 10).until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
         return self
 
     def util_then_click(self, xpath):
@@ -130,7 +119,7 @@ class His:
         :param element:
         :return:
         """
-
+        href = a.get_property("href")
         # # 打开新tab 方式二
         ActionChains(self.browser).key_down(Keys.CONTROL).perform()
         a.click()
@@ -140,6 +129,8 @@ class His:
         # self.browser.get(url)
         all_handles = self.browser.window_handles  # 获取全部页面句柄
         self.browser.switch_to.window(all_handles.pop())  # 打开 最新弹出的页面
+        if self.browser.current_url != href:
+            self.browser.get(href)
 
     def excel_append_result(self):
         for i in range(len(self.result)):
@@ -157,14 +148,25 @@ class His:
         self.wb.save(self.pro_dir + '/' + self.file_name + '.xlsx')
 
 
-his1 = His('chromedriver.exe')
-his1.open(['新疆维吾尔自治区', '宁夏回族自治区', '青海省'])
+list_city = [
+             '内蒙古自治区',
+             '吉林省',
+             '安徽省',
+             '江西省',
+             '山东省',
+             '河南省',
+             '湖北省',
+             '广东省',
+             '广西壮族自治区',
+             '重庆市',
+             '四川省',
+             '贵州省',
+             '云南省',
+             '西藏自治区',
+             '青海省',
+             ]
+for i in range(len(list_city)):
+    city = list_city[i]
+    his = His('chromedriver' + str(i+1) + '.exe')
+    threading.Thread(target=his.open, args=([city],)).start()
 
-his2 = His('chromedriver2.exe')
-his2.open(['甘肃省', '陕西省', '西藏自治区'])
-
-his3 = His('chromedriver3.exe')
-his3.open(['四川省', '贵州省', '云南省'])
-
-his4 = His('chromedriver4.exe')
-his4.open(['广西壮族自治区', '海南省', '重庆市'])
