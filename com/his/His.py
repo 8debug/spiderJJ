@@ -13,6 +13,11 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+"""
+并行爬取2020年《国家统计局用区划代码和城乡划分代码》
+http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2020/index.html
+"""
+
 
 class His:
     def __init__(self, driver_name):
@@ -93,6 +98,11 @@ class His:
         self._close_switch()
 
     def util(self, xpath):
+        """
+        爬虫出错重试
+        :param xpath:
+        :return:
+        """
         try:
             WebDriverWait(self.browser, 10).until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
         except TimeoutException as e:
@@ -115,7 +125,7 @@ class His:
 
     def _open_switch(self, a):
         """
-        点击元素打开新窗口并切换到新窗口
+        点击元素打开新窗口并切换到新窗口，防止网址为blank的情况
         :param element:
         :return:
         """
@@ -149,24 +159,23 @@ class His:
 
 
 list_city = [
-             '内蒙古自治区',
-             '吉林省',
-             '安徽省',
-             '江西省',
-             '山东省',
-             '河南省',
-             '湖北省',
-             '广东省',
-             '广西壮族自治区',
-             '重庆市',
-             '四川省',
-             '贵州省',
-             '云南省',
-             '西藏自治区',
-             '青海省',
-             ]
+    '内蒙古自治区',
+    '吉林省',
+    '安徽省',
+    '江西省',
+    '山东省',
+    '河南省',
+    '湖北省',
+    '广东省',
+    '广西壮族自治区',
+    '重庆市',
+    '四川省',
+    '贵州省',
+    '云南省',
+    '西藏自治区',
+    '青海省',
+]
 for i in range(len(list_city)):
     city = list_city[i]
-    his = His('chromedriver' + str(i+1) + '.exe')
+    his = His('chromedriver' + str(i + 1) + '.exe')
     threading.Thread(target=his.open, args=([city],)).start()
-
