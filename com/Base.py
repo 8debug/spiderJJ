@@ -49,6 +49,14 @@ class Base:
         self.browser.close()
         self.browser.quit()
 
+    # def util_eq(self, xpath):
+    #     try:
+    #         WebDriverWait(self.browser, 10).until(self.browser.find_element_by_xpath(xpath))
+    #     except TimeoutException as e:
+    #         self.browser.refresh()
+    #         WebDriverWait(self.browser, 10).until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
+    #     return self
+
     def util(self, xpath):
         """
         爬虫出错重试

@@ -49,11 +49,11 @@ class RepairMan(Repair):
             sex = array_td[3].text
             mobile = array_td[4].text
             man_id = array_td[5].find_elements_by_xpath("./a")[0].get_attribute("repairman-id")
-            info = self.s.join([name, job, dept, sex, mobile])
+            # info = self.s.join(["姓名", name, "职务", job, "所属机构", dept, "性别", sex, "联系电话", mobile])
             detail = self.user_detail(man_id)
-            content = self.s.join([info, detail])
-            print(content)
-            self.excel_append(content)
+            # content = self.s.join([info, detail])
+            print(detail)
+            self.excel_append(detail)
 
     def user_detail(self, man_id):
         url = 'http://60.16.11.38:93/qxgl/repairman/edit.do?repairman.id=' + man_id
@@ -64,17 +64,17 @@ class RepairMan(Repair):
         # 职务
         job = self.browser.find_element_by_xpath("//*[@id='select2-chosen-3']").text
         # 维修人员姓名
-        name = self.browser.find_element_by_xpath("//*[@id='repairman_name']").text
+        name = self.browser.find_element_by_xpath("//*[@id='repairman_name']").get_property("value")
         # 性别
         sex = self.browser.find_element_by_xpath("//*[@id='select2-chosen-4']").text
         # 联系电话
-        mobile = self.browser.find_element_by_xpath("//*[@id='repairman_phone']").text
+        mobile = self.browser.find_element_by_xpath("//*[@id='repairman_phone']").get_property("value")
         # 身份证号
-        card_id = self.browser.find_element_by_xpath("//*[@id='repairman_cardId']").text
+        card_id = self.browser.find_element_by_xpath("//*[@id='repairman_cardId']").get_property("value")
         # 入职时间
-        work_in_date = self.browser.find_element_by_xpath("//*[@id='repairman_entryDate']").text
+        work_in_date = self.browser.find_element_by_xpath("//*[@id='repairman_entryDate']").get_property("value")
         # 离职时间
-        work_out_date = self.browser.find_element_by_xpath("//*[@id='repairman_leaveDate']").text
+        work_out_date = self.browser.find_element_by_xpath("//*[@id='repairman_leaveDate']").get_property("value")
         # 状态
         state = self.browser.find_element_by_xpath("//*[@id='select2-chosen-5']").text
         # 技术等级
@@ -83,7 +83,7 @@ class RepairMan(Repair):
         can_login = self.browser.find_element_by_xpath("//*[@id='select2-chosen-7']").text
 
         detail = self.s.join(
-            [dept, job, name, sex, mobile, card_id, work_in_date, work_out_date, state, level, can_login])
+            ["所属机构", dept, "职务", job, "姓名", name, "性别", sex, "联系电话", mobile, "身份证", card_id, "入职时间", work_in_date, "离职时间", work_out_date, "状态", state, "技能等级", level, "可登录系统", can_login])
 
         self.close_switch()
 
