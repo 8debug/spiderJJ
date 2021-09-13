@@ -1,7 +1,6 @@
-from time import sleep
+import traceback
 
 from selenium.common.exceptions import NoSuchElementException
-
 from com.repair.Repair import Repair
 
 
@@ -17,11 +16,11 @@ class Parts(Repair):
 
     def current_page(self):
         str_page = self.browser.find_element_by_xpath('//li[@class="paginate_button active"]/a').text
-        print("当前页面", str_page)
         return str_page
 
     def parts(self):
         try:
+            self.util("//li[@data-code='nav_qx_part']")
             a = self.browser.find_element_by_xpath("//a[@href='/qxgl/part/list.do']")
             a.click()
             self.util("//div[text()='零件管理']")
@@ -30,6 +29,7 @@ class Parts(Repair):
             self.excel_colse("零件")
             self.close_browser()
         except Exception as e:
+            traceback.print_exc()
             print(e)
             # self.close_browser()
 
@@ -66,7 +66,8 @@ class Parts(Repair):
             array_td = tr.find_elements_by_xpath("./td")
             part_id = array_td[9].find_elements_by_xpath("./a")[0].get_attribute("part-id")
             detail = self.detail(part_id)
-            print("第{}页，第{}行，详情地址{}".format(current_page, (i+1), detail))
+            detail = self.s.join(["第{}页".format(current_page), "第{}行".format((i+1)), detail])
+            print(detail)
             self.excel_append(detail)
 
     def detail(self, part_id):
