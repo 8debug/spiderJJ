@@ -29,8 +29,20 @@ class Base:
         # 实现无可视化界面
         self.result = []
         options = Options()
+
+        # 利用此方式实现不显示浏览器窗口，会出现 element not interactable 异常，据说是--headless引起的
         # options.add_argument('--headless')
+        # 禁用gpu
         # options.add_argument('--disable-gpu')
+
+        # 利用此方式实现运行脚本，不显示浏览器窗口
+        # 设置浏览器分辨率（窗口大小）
+        options.add_argument("--window-size=1920,1080")
+        # 最大化运行（全屏窗口）,不设置，取元素会报错
+        options.add_argument("--start-maximized")
+        # 开启无界面模式
+        options.add_argument("--headless")
+
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
         self.browser = webdriver.Chrome(executable_path=self.pro_dir + '/' + driver_name, options=options)
         self.browser.maximize_window()
@@ -86,7 +98,7 @@ class Base:
         :return:
         """
         if type(arg) is str and arg.startswith(("http://", "https://")) and self.browser.current_url != arg:
-            self.browser.execute_script("window.open('"+arg+"');")
+            self.browser.execute_script("window.open('" + arg + "');")
         elif type(arg) is WebElement and arg.tag_name == 'a' and arg.get_property("href") in ["", "#"]:
             ActionChains(self.browser).key_down(Keys.CONTROL).perform()
             arg.click()
